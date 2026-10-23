@@ -1,7 +1,9 @@
 ﻿using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using FluentAssertions;
 
 namespace HomeExercise.Tasks.ObjectComparison;
+
 public class ObjectComparison
 {
     [Test]
@@ -14,16 +16,8 @@ public class ObjectComparison
         var expectedTsar = new Person("Ivan IV The Terrible", 54, 170, 70,
             new Person("Vasili III of Russia", 28, 170, 60, null));
 
-        // Перепишите код на использование Fluent Assertions.
-        ClassicAssert.AreEqual(actualTsar.Name, expectedTsar.Name);
-        ClassicAssert.AreEqual(actualTsar.Age, expectedTsar.Age);
-        ClassicAssert.AreEqual(actualTsar.Height, expectedTsar.Height);
-        ClassicAssert.AreEqual(actualTsar.Weight, expectedTsar.Weight);
-
-        ClassicAssert.AreEqual(expectedTsar.Parent!.Name, actualTsar.Parent!.Name);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Age, actualTsar.Parent.Age);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Height, actualTsar.Parent.Height);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Parent, actualTsar.Parent.Parent);
+        actualTsar.Should().BeEquivalentTo(expectedTsar, options => options.Excluding(Tsar => Tsar.Id).
+                                                                            Excluding(Tsar => Tsar.Parent.Id));
     }
 
     [Test]
@@ -34,7 +28,14 @@ public class ObjectComparison
         var expectedTsar = new Person("Ivan IV The Terrible", 54, 170, 70,
             new Person("Vasili III of Russia", 28, 170, 60, null));
 
-        // Какие недостатки у такого подхода? 
+        /* 
+        1. Непонятно, где конкретно и что не сошлось, плохая информативность теста. В сводке по тесту просто будет
+           текст по типу "Expected: true, but: false", FluentAssertions в этом плане дают полную сводку полей;
+        2. После рефакторинга и добавления нового функционала в Person придется переписывать тест,
+           если конечно вообще про него не забудете. Методы FluentAssertions в этом плане надежнее,
+           ведь проходятся по всем полям;
+        3. Не вижу смысла придумывать велосипед, за тебя уже все сделали и этим пользуется большая часть разрабов.
+         */
         ClassicAssert.True(AreEqual(actualTsar, expectedTsar));
     }
 
@@ -43,6 +44,7 @@ public class ObjectComparison
         if (actual == expected) return true;
         if (actual == null || expected == null) return false;
         return
+            // вот тут можно забыть добавить что-либо, очень тяжко воспринимать подобные колонны
             actual.Name == expected.Name
             && actual.Age == expected.Age
             && actual.Height == expected.Height
